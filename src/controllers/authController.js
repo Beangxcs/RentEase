@@ -1,54 +1,64 @@
 const User = require('../models/UsersModel');
 const jwt = require('jsonwebtoken');
 const { sendVerificationEmail } = require('./userVerificationController');
+const path = require('path');
 
 /**
  * GENERATE JWT TOKEN
- * Creates a JWT token for user authentication
  */
 const generateToken = (userId) => {
   return jwt.sign(
-    { userId }, 
-    process.env.JWT_SECRET, 
+    { userId },
+    process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
 
 /**
- * @desc    Register new user
+ * @desc    Register new user (with uploaded valid ID image)
  * @route   POST /api/auth/register
  * @access  Public
- * @body    { fullName, email, password, userType, age, valid_id }
- *          - age must be 18 or older
- *          - valid_id is a government-issued ID string
+ * @form-data
+ *          fullName, email, password, userType, age, valid_id (file)
  */
 const register = async (req, res) => {
   try {
-    const { fullName, email, password, userType, age, valid_id } = req.body;
+    const { fullName, email, password, userType, age } = req.body;
 
-    // Basic input validation for age and valid_id before hitting DB validations
+    // 🧩 Handle uploaded file (valid ID)
+    let valid_id = req.file ? req.file.filename : null;
+
+    if (!valid_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid ID image is required (upload an image file)'
+      });
+    }
+
+    // Basic validation
+    if (!fullName || !email || !password || !userType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please fill out all required fields'
+      });
+    }
+
     if (typeof age === 'undefined' || Number.isNaN(Number(age))) {
       return res.status(400).json({
         success: false,
         message: 'Age is required and must be a number'
       });
     }
+
     if (Number(age) < 18) {
       return res.status(400).json({
         success: false,
         message: 'You must be at least 18 years old to register'
       });
     }
-    if (!valid_id || String(valid_id).trim().length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'A valid government-issued ID is required'
-      });
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
-    
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -56,43 +66,29 @@ const register = async (req, res) => {
       });
     }
 
-    // Create user
+    // ✅ Create user
     const user = await User.create({
       fullName,
       email,
       password,
       userType,
-      is_verified: false, // email verification status
-      valid_id: String(valid_id).trim(),
-      is_id_verified: false, // admin will set this to true after review
+      is_verified: false,
+      valid_id,
+      is_id_verified: false,
       age: Number(age)
     });
 
     // Send verification email
     const emailSent = await sendVerificationEmail(user);
-    
-    if (!emailSent) {
-      // If email fails, still create user but inform about email issue
-      return res.status(201).json({
-        success: true,
-        message: 'User registered successfully, but verification email could not be sent. Please contact support.',
-        data: {
-          user: {
-            _id: user._id,
-            fullName: user.fullName,
-            email: user.email,
-            userType: user.userType,
-            age: user.age,
-            is_verified: user.is_verified,
-            is_id_verified: user.is_id_verified
-          }
-        }
-      });
-    }
+
+    // Generate file URL (optional)
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/ids/${valid_id}`;
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please check your email for verification link.',
+      message: emailSent
+        ? 'User registered successfully. Please check your email for verification link.'
+        : 'User registered successfully, but verification email could not be sent.',
       data: {
         user: {
           _id: user._id,
@@ -100,6 +96,7 @@ const register = async (req, res) => {
           email: user.email,
           userType: user.userType,
           age: user.age,
+          valid_id: fileUrl,
           is_verified: user.is_verified,
           is_id_verified: user.is_id_verified
         }
@@ -107,6 +104,7 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
+    console.error(error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -123,7 +121,6 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -131,9 +128,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if user exists
     const user = await User.findOne({ email }).select('+password');
-    
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -141,9 +136,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Check password
     const isPasswordValid = await user.matchPassword(password);
-    
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -151,26 +144,21 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if email is verified
     if (!user.is_verified) {
       return res.status(401).json({
         success: false,
-        message: 'Please verify your email address before logging in. Check your inbox for verification link.'
+        message: 'Please verify your email before logging in.'
       });
     }
 
-    // If email is verified but ID is not yet verified, block login with clear message
     if (!user.is_id_verified) {
       return res.status(403).json({
         success: false,
-        message: 'Your account is pending ID verification. Please allow an administrator to review and approve your ID.'
+        message: 'Your account is pending ID verification by admin.'
       });
     }
 
-    // Generate JWT token
     const token = generateToken(user._id);
-
-    // Set user as active when they login
     user.isActive = true;
     await user.save();
 
@@ -192,40 +180,30 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
 /**
- * @desc    Logout user (JWT-based - client-side logout)
+ * @desc    Logout user
  * @route   POST /api/auth/logout
  * @access  Private
  */
 const logout = async (req, res) => {
   try {
-    
     const user = await User.findById(req.user._id);
     if (user) {
       user.isActive = false;
       await user.updateLastActivity();
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Logged out successfully. Please remove the token from your client.' 
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully. Please remove token from client.'
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = {
-  register,
-  login,
-  logout
-};
+module.exports = { register, login, logout };

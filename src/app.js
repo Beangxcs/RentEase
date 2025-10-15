@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path'); // ✅ added
 
 dotenv.config();
 
@@ -12,6 +13,9 @@ const itemsRoutes = require('./routers/itemsRoutes');
 
 const app = express();
 
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? ['https://yourdomain.com']
@@ -19,12 +23,14 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.get('/health', (req, res) => res.json({ success: true, environment: process.env.NODE_ENV || 'development' }));
+app.get('/health', (req, res) =>
+  res.json({ success: true, environment: process.env.NODE_ENV || 'development' })
+);
+
+// ✅ Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userManagementRoutes);
