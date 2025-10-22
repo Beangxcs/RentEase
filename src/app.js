@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path'); // ✅ added
+const path = require('path'); 
 
 dotenv.config();
 
@@ -29,7 +29,6 @@ app.get('/health', (req, res) =>
   res.json({ success: true, environment: process.env.NODE_ENV || 'development' })
 );
 
-// ✅ Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);

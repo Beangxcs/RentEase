@@ -53,6 +53,14 @@ const userSchema = new mongoose.Schema({
     min: [18, 'You must be at least 18 years old']
   },
 
+  address: {
+    type: String,
+    required: [true, 'Address is required'],
+    trim: true,
+    minlength: [5, 'Address must be at least 5 characters'],
+    maxlength: [200, 'Address cannot exceed 200 characters']
+  },
+
   is_verified: {
     type: Boolean,                                   
     default: false                                  

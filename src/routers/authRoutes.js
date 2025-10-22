@@ -12,7 +12,8 @@ const {
 } = require('../controllers/authController');
 const {
   getProfile,
-  updateProfile
+  updateProfile,
+  changePassword
 } = require('../controllers/profileController');
 const {
   verifyEmail,
@@ -101,5 +102,12 @@ router.get('/profile', authenticate, getProfile);
  * @access  Private
  */
 router.put('/profile', authenticate, updateProfile);
+
+/**
+ * @route   PUT /api/auth/change-password
+ * @desc    Change user password
+ * @access  Private
+ */
+router.put('/change-password', authenticate, changePassword);
 
 module.exports = router;

@@ -30,7 +30,13 @@ const sendVerificationEmail = async (user) => {
       { expiresIn: '24h' } 
     );
     
-  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  const frontendVerifyBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const backendVerifyBase = process.env.BACKEND_URL || process.env.SERVER_URL || 'http://localhost:5000';
+
+  // Frontend route where a SPA could read the token and call the backend
+  const verificationUrlFrontend = `${frontendVerifyBase}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  // Direct backend verification route - clicking this will immediately invoke verification
+  const verificationUrlBackend = `${backendVerifyBase.replace(/\/$/, '')}/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
     
     const mailOptions = {
   from: `Support <${process.env.EMAIL_USER}>`,
@@ -42,10 +48,12 @@ const sendVerificationEmail = async (user) => {
           <p>Hi ${user.fullName},</p>
           <p>Thank you for registering with us. To complete your registration, please verify your email address by clicking the button below:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email Address</a>
+            <!-- Primary button links directly to backend verification so a click verifies immediately -->
+            <a href="${verificationUrlBackend}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email Address</a>
           </div>
           <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #007bff;">${verificationUrl}</p>
+          <p style="word-break: break-all; color: #007bff;">Direct verification (works immediately): ${verificationUrlBackend}</p>
+          <p style="word-break: break-all; color: #007bff;">Or use the frontend flow: ${verificationUrlFrontend}</p>
           <p><strong>This link will expire in 24 hours.</strong></p>
           <hr style="margin: 30px 0;">
           <p style="color: #666; font-size: 12px;">If you didn't create an account with us, please ignore this email.</p>
@@ -69,8 +77,11 @@ const sendVerificationEmail = async (user) => {
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
+    console.log('🔗 Email verification link clicked!');
+    console.log('📧 Token received:', token ? token.substring(0, 20) + '...' : 'MISSING');
 
     if (!token) {
+      console.error('❌ No token provided');
       return res.status(400).json({
         success: false,
         message: 'Verification token is required'
@@ -78,17 +89,23 @@ const verifyEmail = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('✅ Token verified successfully');
+    console.log('👤 User ID from token:', decoded.userId);
     
     const user = await User.findById(decoded.userId);
     
     if (!user) {
+      console.error('❌ User not found with ID:', decoded.userId);
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
+    
+    console.log('✅ User found:', user.email);
 
     if (decoded.email !== user.email) {
+      console.error('❌ Email mismatch. Token email:', decoded.email, 'User email:', user.email);
       return res.status(400).json({
         success: false,
         message: 'Invalid verification token'
@@ -97,6 +114,20 @@ const verifyEmail = async (req, res) => {
 
     // Check if already verified
     if (user.is_verified) {
+      console.log('⚠️ User already verified:', user.email);
+      // If the client accepts HTML (a browser click), return a friendly page
+      if (req.accepts && req.accepts('html')) {
+        return res.status(200).send(`
+          <html>
+            <head><title>Email Verified</title></head>
+            <body style="font-family: Arial, sans-serif; text-align:center; padding:40px;">
+              <h2>Your email is already verified</h2>
+              <p>You can now <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">log in</a>.</p>
+            </body>
+          </html>
+        `);
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Email already verified'
@@ -104,9 +135,27 @@ const verifyEmail = async (req, res) => {
     }
 
     // Update user verification status
+    console.log('🔄 Marking user as verified:', user.email);
     user.is_verified = true;
     await user.save();
+    console.log('✅ User verification status saved to database');
 
+    // If the request is from a browser, render a simple HTML confirmation page
+    if (req.accepts && req.accepts('html')) {
+      console.log('📱 Rendering HTML success page for browser');
+      return res.status(200).send(`
+        <html>
+          <head><title>Verification Successful</title></head>
+          <body style="font-family: Arial, sans-serif; text-align:center; padding:40px;">
+            <h2>✅ Email Verified Successfully!</h2>
+            <p style="font-size: 16px; color: #28a745;">Your email has been verified. You can now log in to your account.</p>
+            <p style="margin-top: 30px;"><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Login</a></p>
+          </body>
+        </html>
+      `);
+    }
+
+    console.log('✅ Verification complete for user:', user.email);
     res.json({
       success: true,
       message: 'Email verified successfully. You can now log in.',
@@ -122,7 +171,9 @@ const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Error during email verification:', error.message);
     if (error.name === 'JsonWebTokenError') {
+      console.error('❌ Invalid or malformed token');
       return res.status(400).json({
         success: false,
         message: 'Invalid verification token'
