@@ -4,7 +4,7 @@ const { sendVerificationEmail } = require('./userVerificationController');
 const path = require('path');
 
 /**
- * GENERATE JWT TOKEN
+ * GENERATE JWT TOKEN  
  */
 const generateToken = (userId) => {
   return jwt.sign(
@@ -25,7 +25,7 @@ const register = async (req, res) => {
   try {
     const { fullName, email, password, userType, age, address } = req.body;
 
-    // 🧩 Handle uploaded file (valid ID)
+    //  Handle uploaded file (valid ID)
     let valid_id = req.file ? req.file.filename : null;
 
     if (!valid_id) {

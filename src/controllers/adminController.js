@@ -36,8 +36,8 @@ const listUsers = async (req, res) => {
 
 /**
  * @desc    Get specific user by ID
- * @route   GET /api/admin/users/:id
- * @access  Private (Admin only)
+ * @route   GET /api/admin/users/:id 
+ * @access  Private (Admin only)        
  */
 const getUserById = async (req, res) => {
   try {

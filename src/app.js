@@ -10,6 +10,7 @@ const authRoutes = require('./routers/authRoutes');
 const userManagementRoutes = require('./routers/userManagementRoutes');
 const adminRoutes = require('./routers/adminRoutes');
 const itemsRoutes = require('./routers/itemsRoutes');
+const bookingsRoutes = require('./routers/bookingsRoutes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userManagementRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/bookings', bookingsRoutes);
 
 app.get('/api', (req, res) => {
   res.json({
@@ -66,6 +68,16 @@ app.get('/api', (req, res) => {
       'GET /api/admin/users',
       'GET /api/admin/users/:id',
       'PATCH /api/admin/users/:id/verify-id'
+    ],
+    bookingsEndpoints: [
+      'POST /api/bookings',
+      'GET /api/bookings',
+      'GET /api/bookings/:id',
+      'PUT /api/bookings/:id',
+      'DELETE /api/bookings/:id',
+      'GET /api/bookings/guest/:guest_id',
+      'GET /api/bookings/property/:property_id',
+      'GET /api/bookings/stats'
     ]
   });
 });
