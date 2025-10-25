@@ -37,7 +37,7 @@ const createBooking = async (req, res) => {
       nights: parseInt(nights),
       amount: parseFloat(amount),
       deduction: deduction !== undefined ? parseFloat(deduction) : 0,
-      status: 'confirmed'
+      status: 'pending'
     });
 
     const populatedBooking = await Bookings.findById(booking._id)
@@ -158,14 +158,6 @@ const updateBooking = async (req, res) => {
       });
     }
 
-    // Check if trying to change status from "checked out" to something else
-    if (booking.status === 'checked out' && req.body.status && req.body.status !== 'checked out') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot change status from "checked out" to "confirmed" or "cancelled"'
-      });
-    }
-
     const { check_in, check_out, nights, amount, deduction, status } = req.body;
     const updateData = {};
     const oldStatus = booking.status;
@@ -197,8 +189,8 @@ const updateBooking = async (req, res) => {
       { path: 'guest_id', select: 'fullName email' }
     ]);
 
-    // If status changed to "checked out", create rental history
-    if (oldStatus !== 'checked out' && updatedBooking.status === 'checked out') {
+    // If status changed to "approved", create rental history
+    if (oldStatus !== 'approved' && updatedBooking.status === 'approved') {
       const gross = updatedBooking.amount;
       const net = updatedBooking.amount - updatedBooking.deduction;
 
@@ -352,22 +344,23 @@ const getPropertyBookings = async (req, res) => {
 const getBookingsStats = async (req, res) => {
   try {
     const totalBookings = await Bookings.countDocuments();
-    const confirmedBookings = await Bookings.countDocuments({ status: 'confirmed' });
+    const pendingBookings = await Bookings.countDocuments({ status: 'pending' });
+    const approvedBookings = await Bookings.countDocuments({ status: 'approved' });
+    const rejectedBookings = await Bookings.countDocuments({ status: 'rejected' });
     const cancelledBookings = await Bookings.countDocuments({ status: 'cancelled' });
-    const checkedOutBookings = await Bookings.countDocuments({ status: 'checked out' });
 
     const totalRevenue = await Bookings.aggregate([
-      { $match: { status: 'checked out' } },
+      { $match: { status: 'approved' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
 
     const totalDeductions = await Bookings.aggregate([
-      { $match: { status: 'checked out' } },
+      { $match: { status: 'approved' } },
       { $group: { _id: null, total: { $sum: '$deduction' } } }
     ]);
 
     const totalNights = await Bookings.aggregate([
-      { $match: { status: 'checked out' } },
+      { $match: { status: 'approved' } },
       { $group: { _id: null, total: { $sum: '$nights' } } }
     ]);
 
@@ -377,9 +370,10 @@ const getBookingsStats = async (req, res) => {
       data: {
         stats: {
           totalBookings,
-          confirmedBookings,
+          pendingBookings,
+          approvedBookings,
+          rejectedBookings,
           cancelledBookings,
-          checkedOutBookings,
           totalRevenue: totalRevenue[0]?.total || 0,
           totalDeductions: totalDeductions[0]?.total || 0,
           netRevenue: (totalRevenue[0]?.total || 0) - (totalDeductions[0]?.total || 0),

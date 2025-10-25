@@ -1,4 +1,6 @@
 const User = require('../models/UsersModel');
+const RentalHistory = require('../models/RentalHistoryModel');
+const Property = require('../models/PropertiesModel');
 
 
 /**
@@ -88,10 +90,71 @@ const verifyUserId = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get revenue by property (for pie chart)
+ * @route   GET /api/admin/my-revenue
+ * @access  Private (Admin only)
+ */
+const myRevenue = async (req, res) => {
+  try {
+    // Aggregate revenue from rental history grouped by property
+    const revenueData = await RentalHistory.aggregate([
+      {
+        $group: {
+          _id: '$property_id',
+          totalRevenue: { $sum: '$net' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'properties',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'property'
+        }
+      },
+      {
+        $unwind: '$property'
+      },
+      {
+        $project: {
+          _id: 0,
+          propertyId: '$_id',
+          propertyName: '$property.item_name',
+          propertyRevenue: '$totalRevenue'
+        }
+      },
+      {
+        $sort: { propertyRevenue: -1 }
+      }
+    ]);
+
+    // Calculate total revenue
+    const totalRevenue = revenueData.reduce((sum, item) => sum + item.propertyRevenue, 0);
+
+    res.json({
+      success: true,
+      message: 'Property revenue retrieved successfully',
+      data: {
+        properties: revenueData,
+        totalRevenue: totalRevenue,
+        propertyCount: revenueData.length
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   listUsers,
   getUserById,
-  verifyUserId
+  verifyUserId,
+  myRevenue
 };
 
 

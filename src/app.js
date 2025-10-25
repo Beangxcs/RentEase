@@ -67,7 +67,8 @@ app.get('/api', (req, res) => {
     adminEndpoints: [
       'GET /api/admin/users',
       'GET /api/admin/users/:id',
-      'PATCH /api/admin/users/:id/verify-id'
+      'PATCH /api/admin/users/:id/verify-id',
+      'GET /api/admin/my-revenue'
     ],
     bookingsEndpoints: [
       'POST /api/bookings',

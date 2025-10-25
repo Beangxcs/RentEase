@@ -111,20 +111,31 @@ const getAllProperties = async (req, res) => {
       filter.$text = { $search: search };
     }
 
-    // Execute query with pagination
-    const properties = await Property.find(filter)
+    // Get all properties matching the filter
+    let properties = await Property.find(filter)
       .populate('uploadedBy', 'fullName email')
-      .sort({ uploadedAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .sort({ uploadedAt: -1 });
 
-    const total = await Property.countDocuments(filter);
+    // Get all approved bookings to filter out booked properties
+    const Bookings = require('../models/BookingsModel');
+    const bookedPropertyIds = await Bookings.distinct('property_id', { status: 'approved' });
+
+    // Filter out properties that are currently booked
+    properties = properties.filter(property => 
+      !bookedPropertyIds.some(id => id.toString() === property._id.toString())
+    );
+
+    // Apply pagination after filtering
+    const total = properties.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedProperties = properties.slice(startIndex, endIndex);
 
     res.json({
       success: true,
       message: 'Properties retrieved successfully',
       data: {
-        properties,
+        properties: paginatedProperties,
         pagination: {
           currentPage: parseInt(page),
           totalPages: Math.ceil(total / limit),

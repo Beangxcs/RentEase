@@ -4,7 +4,8 @@ const { authenticate, authorize } = require('../middleware/auth');
 const {
   listUsers,
   getUserById,
-  verifyUserId
+  verifyUserId,
+  myRevenue
 } = require('../controllers/adminController');
 
 /**
@@ -39,6 +40,15 @@ router.get('/users/:id', authenticate, authorize('admin'), getUserById);
  * @body    None
  */
 router.patch('/users/:id/verify-id', authenticate, authorize('admin'), verifyUserId);
+
+/**
+ * @route   GET /api/admin/my-revenue
+ * @desc    Get revenue statistics by property for pie chart
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @body    None
+ */
+router.get('/my-revenue', authenticate, authorize('admin'), myRevenue);
 
 module.exports = router;
 

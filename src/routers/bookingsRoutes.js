@@ -44,10 +44,11 @@ router.get('/property/:property_id', authenticate, getPropertyBookings);
 
 /**
  * @route   POST /api/bookings
- * @desc    Create new booking
+ * @desc    Create new booking (default status: pending)
  * @access  Private
  * @headers Authorization: Bearer <token>
  * @body    { guest_id, property_id, check_in, check_out, nights, amount, deduction? }
+ * @note    Bookings are created with 'pending' status and must be approved by admin
  */
 router.post('/', authenticate, createBooking);
 
@@ -72,11 +73,12 @@ router.get('/:id', authenticate, getBookingById);
 
 /**
  * @route   PUT /api/bookings/:id
- * @desc    Update booking (all fields optional, cannot change "checked out" to confirmed/cancelled)
+ * @desc    Update booking (all fields optional)
  * @access  Private (Admin or Owner)
  * @headers Authorization: Bearer <token>
  * @body    { check_in?, check_out?, nights?, amount?, deduction?, status? }
- * @note    When status is changed to "checked out", a rental history record is automatically created
+ * @note    Status options: pending, approved, rejected, cancelled
+ * @note    When status is changed to "approved", a rental history record is automatically created
  */
 router.put('/:id', authenticate, updateBooking);
 
