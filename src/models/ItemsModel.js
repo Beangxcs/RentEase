@@ -28,7 +28,8 @@ const itemSchema = new mongoose.Schema({
     enum: {
       values: ['Vehicle', 'Apartment', 'Equipment'],
       message: 'Category must be Vehicle, Apartment, or Equipment'
-    }
+    },
+    default: 'Apartment'
   },
   
   price: {

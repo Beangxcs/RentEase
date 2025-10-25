@@ -16,7 +16,7 @@ const createRentalHistory = async (req, res) => {
         message: 'All fields are required: property_id, guest_id, check_in, check_out, nights, gross, net'
       });
     }
-
+                    
     const rentalHistory = await RentalHistory.create({
       property_id,
       guest_id,
