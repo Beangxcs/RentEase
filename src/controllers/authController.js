@@ -23,7 +23,7 @@ const generateToken = (userId) => {
  */
 const register = async (req, res) => {
   try {
-    const { fullName, email, password, userType, age, address } = req.body;
+    const { fullName, email, phoneNumber, password, userType, age, address } = req.body;
 
     //  Handle uploaded file (valid ID)
     let valid_id = req.file ? req.file.filename : null;
@@ -36,7 +36,7 @@ const register = async (req, res) => {
     }
 
     // Basic validation
-    if (!fullName || !email || !password || !userType || !address) {
+    if (!fullName || !email || !phoneNumber || !password || !userType || !address) {
       return res.status(400).json({
         success: false,
         message: 'Please fill out all required fields'
@@ -70,6 +70,7 @@ const register = async (req, res) => {
     const user = await User.create({
       fullName,
       email,
+      phoneNumber,
       password,
       userType,
       is_verified: false,
@@ -95,6 +96,7 @@ const register = async (req, res) => {
           _id: user._id,
           fullName: user.fullName,
           email: user.email,
+          phoneNumber: user.phoneNumber,
           userType: user.userType,
           age: user.age,
           address: user.address,
@@ -169,6 +171,7 @@ const login = async (req, res) => {
       message: 'Login successful',
       data: {
         token,
+        userType: user.userType,
         user: {
           _id: user._id,
           fullName: user.fullName,
