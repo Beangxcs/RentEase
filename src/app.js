@@ -9,7 +9,7 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 const authRoutes = require('./routers/authRoutes');
 const userManagementRoutes = require('./routers/userManagementRoutes');
 const adminRoutes = require('./routers/adminRoutes');
-const itemsRoutes = require('./routers/itemsRoutes');
+const propertiesRoutes = require('./routers/propertiesRoutes');
 const bookingsRoutes = require('./routers/bookingsRoutes');
 
 const app = express();
@@ -34,7 +34,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userManagementRoutes);
-app.use('/api/items', itemsRoutes);
+app.use('/api/properties', propertiesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bookings', bookingsRoutes);
 
@@ -55,14 +55,14 @@ app.get('/api', (req, res) => {
       'GET /api/users',
       'GET /api/users/stats'
     ],
-    itemsEndpoints: [
-      'POST /api/items',
-      'GET /api/items',
-      'GET /api/items/:id',
-      'PUT /api/items/:id',
-      'DELETE /api/items/:id',
-      'GET /api/items/my-items',
-      'GET /api/items/stats'
+    propertiesEndpoints: [
+      'POST /api/properties',
+      'GET /api/properties',
+      'GET /api/properties/:id',
+      'PUT /api/properties/:id',
+      'DELETE /api/properties/:id',
+      'GET /api/properties/my-properties',
+      'GET /api/properties/stats'
     ],
     adminEndpoints: [
       'GET /api/admin/users',

@@ -70,9 +70,9 @@ router.get('/my-properties', authenticate, getMyProperties);
  * @access  Private
  * @headers Authorization: Bearer <token>
  * @body    { item_name, description?, category, price, location: {barangay, city, province}, rooms?, bed?, bathroom? }
- * @file    picture (required)
+ * @file    pictures[] (required, multiple files allowed, max 10)
  */
-router.post('/', authenticate, upload.single('picture'), createProperty);
+router.post('/', authenticate, upload.array('pictures', 10), createProperty);
 
 /**
  * @route   GET /api/properties
@@ -96,10 +96,10 @@ router.get('/:id', getPropertyById);
  * @desc    Update property (all fields optional)
  * @access  Private (Owner or Admin)
  * @headers Authorization: Bearer <token>
- * @body    { item_name?, description?, category?, price?, location?, disable?, rooms?, bed?, bathroom? }
- * @file    picture? (optional)
+ * @body    { item_name?, description?, category?, price?, location?, disable?, rooms?, bed?, bathroom?, removePictures? }
+ * @file    pictures[]? (optional, multiple files allowed, max 10)
  */
-router.put('/:id', authenticate, upload.single('picture'), updateProperty);
+router.put('/:id', authenticate, upload.array('pictures', 10), updateProperty);
 
 /**
  * @route   DELETE /api/properties/:id

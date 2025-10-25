@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const rentalHistorySchema = new mongoose.Schema({
   property_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Item',
+    ref: 'Property',
     required: [true, 'Property ID is required']
   },
 
