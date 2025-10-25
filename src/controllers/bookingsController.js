@@ -8,13 +8,13 @@ const RentalHistory = require('../models/RentalHistoryModel');
  */
 const createBooking = async (req, res) => {
   try {
-    const { guest_id, property_id, check_in, check_out, nights, amount, deduction } = req.body;
+    const { property_id, check_in, check_out, nights, amount, deduction } = req.body;
 
     // Validate required fields
-    if (!guest_id || !property_id || !check_in || !check_out || !nights || !amount) {
+    if (!property_id || !check_in || !check_out || !nights || !amount) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required: guest_id, property_id, check_in, check_out, nights, amount'
+        message: 'All fields are required: property_id, check_in, check_out, nights, amount'
       });
     }
 
@@ -30,7 +30,7 @@ const createBooking = async (req, res) => {
     }
 
     const booking = await Bookings.create({
-      guest_id,
+      guest_id: req.user._id, // Automatically get from authenticated user
       property_id,
       check_in: checkInDate,
       check_out: checkOutDate,
@@ -161,14 +161,41 @@ const updateBooking = async (req, res) => {
     const { check_in, check_out, nights, amount, deduction, status } = req.body;
     const updateData = {};
     const oldStatus = booking.status;
+    const userType = req.user.userType;
 
-    // Update fields if provided
-    if (check_in !== undefined) updateData.check_in = new Date(check_in);
-    if (check_out !== undefined) updateData.check_out = new Date(check_out);
-    if (nights !== undefined) updateData.nights = parseInt(nights);
-    if (amount !== undefined) updateData.amount = parseFloat(amount);
-    if (deduction !== undefined) updateData.deduction = parseFloat(deduction);
-    if (status !== undefined) updateData.status = status;
+    // Check if user is rentor and restrict their permissions
+    if (userType === 'rentor') {
+      // Rentor can only update check_in, check_out, and set status to cancelled
+      if (check_in !== undefined) updateData.check_in = new Date(check_in);
+      if (check_out !== undefined) updateData.check_out = new Date(check_out);
+      
+      // Rentor can only change status to 'cancelled'
+      if (status !== undefined) {
+        if (status !== 'cancelled') {
+          return res.status(403).json({
+            success: false,
+            message: 'Rentors can only cancel bookings. Status can only be set to "cancelled"'
+          });
+        }
+        updateData.status = status;
+      }
+
+      // Rentor cannot update nights, amount, or deduction
+      if (nights !== undefined || amount !== undefined || deduction !== undefined) {
+        return res.status(403).json({
+          success: false,
+          message: 'Rentors can only update check_in, check_out, and cancel bookings'
+        });
+      }
+    } else {
+      // Admin and staff can update all fields
+      if (check_in !== undefined) updateData.check_in = new Date(check_in);
+      if (check_out !== undefined) updateData.check_out = new Date(check_out);
+      if (nights !== undefined) updateData.nights = parseInt(nights);
+      if (amount !== undefined) updateData.amount = parseFloat(amount);
+      if (deduction !== undefined) updateData.deduction = parseFloat(deduction);
+      if (status !== undefined) updateData.status = status;
+    }
 
     // Validate dates if both are being updated
     if (updateData.check_in && updateData.check_out) {
@@ -253,15 +280,15 @@ const deleteBooking = async (req, res) => {
 };
 
 /**
- * @desc    Get bookings for a specific guest
- * @route   GET /api/bookings/guest/:guest_id
+ * @desc    Get current user's bookings
+ * @route   GET /api/bookings/my-bookings
  * @access  Private
  */
-const getGuestBookings = async (req, res) => {
+const getMyBookings = async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
 
-    const filter = { guest_id: req.params.guest_id };
+    const filter = { guest_id: req.user._id }; // Get from authenticated user
     if (status) filter.status = status;
 
     const bookings = await Bookings.find(filter)
@@ -274,7 +301,7 @@ const getGuestBookings = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Guest bookings retrieved successfully',
+      message: 'Your bookings retrieved successfully',
       data: {
         bookings,
         pagination: {
@@ -396,7 +423,7 @@ module.exports = {
   getBookingById,
   updateBooking,
   deleteBooking,
-  getGuestBookings,
+  getMyBookings,
   getPropertyBookings,
   getBookingsStats
 };

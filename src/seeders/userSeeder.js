@@ -9,6 +9,7 @@ const users = [
   {
     fullName: 'Admin User',
     email: 'admin@rentease.com',
+    phoneNumber: '+639171234567',
     password: 'Admin@123',
     userType: 'admin',
     valid_id: 'ADMIN-ID-001',
@@ -21,6 +22,7 @@ const users = [
   {
     fullName: 'John Doe',
     email: 'john.doe@example.com',
+    phoneNumber: '+639171234568',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'SSS-12345678',
@@ -33,6 +35,7 @@ const users = [
   {
     fullName: 'Maria Santos',
     email: 'maria.santos@example.com',
+    phoneNumber: '+639171234569',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'UMID-87654321',
@@ -45,6 +48,7 @@ const users = [
   {
     fullName: 'Robert Chen',
     email: 'robert.chen@example.com',
+    phoneNumber: '+639171234570',
     password: 'Password@123',
     userType: 'staff',
     valid_id: 'PASSPORT-ABC123',
@@ -57,6 +61,7 @@ const users = [
   {
     fullName: 'Ana Reyes',
     email: 'ana.reyes@example.com',
+    phoneNumber: '+639171234571',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'DRIVERS-456789',
@@ -69,6 +74,7 @@ const users = [
   {
     fullName: 'Michael Torres',
     email: 'michael.torres@example.com',
+    phoneNumber: '+639171234572',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'POSTAL-123456',
@@ -81,6 +87,7 @@ const users = [
   {
     fullName: 'Sofia Rodriguez',
     email: 'sofia.rodriguez@example.com',
+    phoneNumber: '+639171234573',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'TIN-987654321',
@@ -93,6 +100,7 @@ const users = [
   {
     fullName: 'David Cruz',
     email: 'david.cruz@example.com',
+    phoneNumber: '+639171234574',
     password: 'Password@123',
     userType: 'staff',
     valid_id: 'PRC-246810',
@@ -105,6 +113,7 @@ const users = [
   {
     fullName: 'Isabella Garcia',
     email: 'isabella.garcia@example.com',
+    phoneNumber: '+639171234575',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'GSIS-135792',
@@ -117,6 +126,7 @@ const users = [
   {
     fullName: 'James Lim',
     email: 'james.lim@example.com',
+    phoneNumber: '+639171234576',
     password: 'Password@123',
     userType: 'rentor',
     valid_id: 'PHILHEALTH-864209',

@@ -7,7 +7,7 @@ const {
   getBookingById,
   updateBooking,
   deleteBooking,
-  getGuestBookings,
+  getMyBookings,
   getPropertyBookings,
   getBookingsStats
 } = require('../controllers/bookingsController');
@@ -23,14 +23,14 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.get('/stats', authenticate, authorize('admin'), getBookingsStats);
 
 /**
- * @route   GET /api/bookings/guest/:guest_id
- * @desc    Get bookings for a specific guest
+ * @route   GET /api/bookings/my-bookings
+ * @desc    Get current user's bookings
  * @access  Private
  * @headers Authorization: Bearer <token>
  * @query   page, limit, status
  * @body    None
  */
-router.get('/guest/:guest_id', authenticate, getGuestBookings);
+router.get('/my-bookings', authenticate, getMyBookings);
 
 /**
  * @route   GET /api/bookings/property/:property_id
@@ -47,7 +47,8 @@ router.get('/property/:property_id', authenticate, getPropertyBookings);
  * @desc    Create new booking (default status: pending)
  * @access  Private
  * @headers Authorization: Bearer <token>
- * @body    { guest_id, property_id, check_in, check_out, nights, amount, deduction? }
+ * @body    { property_id, check_in, check_out, nights, amount, deduction? }
+ * @note    guest_id is automatically set from authenticated user token
  * @note    Bookings are created with 'pending' status and must be approved by admin
  */
 router.post('/', authenticate, createBooking);

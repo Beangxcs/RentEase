@@ -31,6 +31,7 @@ app.get('/health', (req, res) =>
 );
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/storage', express.static(path.join(__dirname, '../storage')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userManagementRoutes);
